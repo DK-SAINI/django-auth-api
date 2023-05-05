@@ -132,3 +132,15 @@ REST_FRAMEWORK = {
     ),
     "NON_FIELD_ERRORS_KEY": "error"
 }
+
+# Set base url
+BASE_URL = "http://127.0.0.1:8000"
+
+# Email Configrations
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # or your email provider's SMTP server
+EMAIL_PORT = 587  # or the port for your email provider's SMTP server
+EMAIL_USE_TLS = True  # or False depending on whether your email provider requires TLS
+EMAIL_HOST_USER = 'example@gmail.com'  # your email address
+EMAIL_HOST_PASSWORD = '+++++++++++++++'  # your email password
+DEFAULT_FROM_EMAIL = 'example@gmail.com'  # your email address

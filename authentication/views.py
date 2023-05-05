@@ -3,9 +3,14 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 
+from django.shortcuts import redirect
+from django.contrib.auth.models import User
+from django.views.generic import TemplateView
+
+# import serializer
 from authentication.serializer import UserRegisterSerializer, UserLoginSerializer
 
-from django.contrib.auth.models import User
+from helper.email import send_activation_email
 
 
 class CreateUserView(APIView):
@@ -53,3 +58,59 @@ class UserLoginView(APIView):
             )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SendActivationEmailView(APIView):
+    def post(self, request):
+        # Get the email from the request data
+        email = request.data.get('email')
+
+        try:
+            # Try to get the user with the provided email address
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            # If the user doesn't exist, return an error response
+            response = {
+                'status': False,
+                'message': 'Invalid email address',
+                'data': None
+
+            }
+            return Response(response, status=400)
+
+        if user.is_active:
+            # If the user is already active, return an error response
+            response = {
+                'status': False,
+                'message': 'Account already activated',
+                'data': None
+
+            }
+            return Response(response, status=400)
+
+        # Call the send_activation_email method
+        send_activation_email(user)
+        response = {
+            'status': True,
+            'message': 'Activation email sent',
+            'data': None
+
+        }
+        return Response(response, status=200)
+
+# TODO
+class ActivateAccountView(TemplateView):
+    template_name = 'activate_account.html'
+
+    def get(self, request, *args, **kwargs):
+        try:
+            # Try to get the user with the provided auth_token
+            user = User.objects.get(auth_token=kwargs['token'])
+        except User.DoesNotExist:
+            pass
+            # If the user doesn't exist, redirect to the activation failed page
+            # return redirect(reverse('account_activation_failed'))
+        # Set the user as active, clear the auth_token, and save the user model
+        user.is_active = True
+        user.auth_token = ''
+        user.save()
