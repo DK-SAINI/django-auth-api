@@ -1,10 +1,11 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
+from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserRegisterSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(required=True)
     last_name = serializers.CharField(required=True)
     email = serializers.EmailField(
@@ -16,6 +17,7 @@ class UserSerializer(serializers.ModelSerializer):
             )
         ],
     )
+    extra_kwargs = {'password': {'write_only': True}}
 
     class Meta:
         model = User
@@ -25,12 +27,21 @@ class UserSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password')
         user = User.objects.create(**validated_data)
         user.set_password(password)
+
+        # Set user active False for verify user.
         user.is_active = False
+
         user.save()
         return user
-        # user = User.objects.create(
-        #     username=validated_data['username'],
-        #     email=validated_data['email'],
-        #     first_name=validated_data['first_name'],
-        #     last_name=validated_data['last_name'],
-        # )
+
+
+class UserLoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()
+
+    def validate(self, data):
+        user = authenticate(**data)
+
+        if user and user.is_active:
+            return user
+        raise serializers.ValidationError("Incorrect Credentials.")
